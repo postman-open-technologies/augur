@@ -34,6 +34,12 @@ sudo apt install firefox-geckodriver
 
 # Please reboot after this. 
 ```
+If you run into trouble installing TensorFlow, this might be for two reasons:
+
+- disk space
+- memory
+
+Consider using a larger vm. If run on EC2 an instance AMI of t2-large or more powerful is recommended. If you run into memory or disk space problems during installation, chances are your vm is under-provisioned for running Augur with more than 50 repositories.
 
 ### RabbitMQ Configuration
 The default timeout for RabbitMQ needs to be set on Ubuntu 22.x. 
@@ -81,16 +87,19 @@ After that, return to your user by exiting `psql`
 postgres=# \quit
 ```
 
-Here we want to start an SSL connection to the `augur` database on port 5432:
+Here we want to test the SSL connection to the `augur` database on port 5432, with the password defined above:
 ```shell
 psql -h localhost -U augur -p 5432
 ```
 
-Now type `exit` to log off the postgres user, and `exit` a SECOND time to log off the root user.
+Now type `exit` or hit Ctrl-D to log out of the psql prompt, then exit to log off the postgres user, and `exit` a third time to log off the root user.
 ```shell
+exit
 exit
 exit 
 ```
+
+You're now back to your ubuntu user shell.
 
 ## Rabbitmq Broker Configuration
 You have to setup a specific user, and broker host for your augur instance. You can accomplish this by running the below commands:
@@ -114,7 +123,7 @@ RabbitMQ's server can then be started from systemd:
 sudo systemctl start rabbitmq-server
 ```
 
-If your setup of rabbitmq is successful your broker url should look like this:
+If your setup of rabbitmq is successful your broker url will look like this. You will need this later during installation:
 
 **broker_url = `amqp://augur:password_rabbitmq@localhost:5672/augur_vhost`**
 
@@ -200,7 +209,7 @@ Generate a certificate for the specific domain for which you have a file already
  sudo certbot -v --nginx  -d ai.chaoss.io
 ```
 
-If you run on EC2 (or Azure most likely too), you will need to use a service like [DuckDNS](duckdns.org) to create a static hostname, as certbot doesn't allow creating certificates for dynamically assigned hostnames, e.g. ec2-54-154-97-257.eu-west-1.compute.amazonaws.com
+If you run on EC2 (or Azure most likely, too), you will need to use a service like [DuckDNS](duckdns.org) to create a static hostname, as certbot doesn't allow creating certificates for dynamically assigned hostnames, e.g. ec2-54-154-97-257.eu-west-1.compute.amazonaws.com
 
 In the example file above. Your resulting nginx sites-enabled file will look like this: 
 
