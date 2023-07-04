@@ -34,12 +34,6 @@ sudo apt install firefox-geckodriver
 
 # Please reboot after this. 
 ```
-If you run into trouble installing TensorFlow, this might be for two reasons:
-
-- disk space
-- memory
-
-Consider using a larger vm. If run on EC2 an instance AMI of t2-large or more powerful is recommended. If you run into memory or disk space problems during installation, chances are your vm is under-provisioned for running Augur with more than 50 repositories.
 
 ### RabbitMQ Configuration
 The default timeout for RabbitMQ needs to be set on Ubuntu 22.x. 
@@ -275,6 +269,17 @@ From the root of the Augur Directory, type `make install`. You will be prompted 
 - Then the same for GitLab
 - and finally a directory to clone repositories to
 
+## Potential pitfalls
+
+### Tensorflow
+If you run into trouble installing TensorFlow, this might be for two reasons:
+
+- disk space
+- memory
+
+Consider using a larger vm. If run on EC2 an instance type of t2-xlarge or more powerful is recommended. If you run into memory or disk space problems during installation, chances are your vm is under-provisioned for running Augur with more than 50 repositories.
+
+### 
 ## Post Installation of Augur
 
 ### Redis Broker Configuration
