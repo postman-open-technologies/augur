@@ -1,18 +1,18 @@
 ## Augur Setup
 
 # Ubuntu 22.x
-We default to this version of Ubuntu for the moment because Augur does not yet support python3.10, which is the default version of python3.x distributed with Ubuntu 22.0x.x
+We default to version 22.x of Ubuntu. Augur runs ok on python3.10, which is the default version of python3.x distributed with Ubuntu 22.0x.x.
 
 ## Git Platform Requirements (Things to have setup prior to initiating installation.)
-1. Obtain a GitHub Access Token: https://github.com/settings/tokens
-2. Obtain a GitLab Access Token: https://gitlab.com/-/profile/personal_access_tokens
+1. Obtain a GitHub Personal Access Token from your GitHub user's Setting, Developer Settings: https://github.com/settings/tokens
+2. Obtain a GitLab Access Token from your GitLab user's Preferences, Access Tokens: https://gitlab.com/-/profile/personal_access_tokens
 
 ### Fork and Clone Augur
-1. Fork https://github.com/chaoss/augur 
-2. Clone your fork. We recommend creating a `github` directory in your user's base directory. 
+1. Fork https://github.com/chaoss/augur under your org or your user on GitHub.
+2. Clone your fork. We recommend creating a `github` or `src` directory in your user's base directory. 
 
 ## Pre-Requisite Operating System Level Packages
-Here we ensure your system is up to date, install required python libraries, install postgresql, and install our queuing infrastrucutre, which is composed of redis-server and rabbitmq-server
+Here we ensure your system is up to date, install required python libraries, install postgresql, and install our queuing infrastructure, which is composed of redis-server and rabbitmq-server
 
 ### Executable
 ```shell 
@@ -29,10 +29,10 @@ sudo apt install rabbitmq-server && #required
 sudo snap install go --classic && #required: Go Needs to be version 1.19.x or higher. Snap is the package manager that gets you to the right version. Classic enables it to actually be installed at the correct version.
 sudo apt install nginx && # required for hosting
 sudo add-apt-repository ppa:mozillateam/firefox-next &&
-sudo apt install firefox=115.0~b2+build1-0ubuntu0.22.04.1 &&
+sudo apt install firefox=115.0~b9+build1-0ubuntu0.22.04.1 && #this might need updating in version number. Important here is to not use the snap version of firefox.
 sudo apt install firefox-geckodriver
 
-# You will almost certainly need to reboot after this. 
+# Please reboot after this. 
 ```
 
 ### RabbitMQ Configuration
@@ -67,7 +67,7 @@ psql
 Then, from within the resulting postgresql shell: 
 ```sql
 CREATE DATABASE augur;
-CREATE USER augur WITH ENCRYPTED PASSWORD 'password';
+CREATE USER augur WITH ENCRYPTED PASSWORD 'password_psql';
 GRANT ALL PRIVILEGES ON DATABASE augur TO augur;
 ```
 
@@ -83,7 +83,7 @@ postgres=# \quit
 
 Here we want to start an SSL connection to the `augur` database on port 5432:
 ```shell
-psql -h localhost -U postgres -p 5432
+psql -h localhost -U augur -p 5432
 ```
 
 Now type `exit` to log off the postgres user, and `exit` a SECOND time to log off the root user.
@@ -96,7 +96,7 @@ exit
 You have to setup a specific user, and broker host for your augur instance. You can accomplish this by running the below commands:
 ```shell
 sudo rabbitmq-plugins enable rabbitmq_management &&
-sudo rabbitmqctl add_user augur password123 &&
+sudo rabbitmqctl add_user augur password_rabbitmq &&
 sudo rabbitmqctl add_vhost augur_vhost &&
 sudo rabbitmqctl set_user_tags augur augurTag administrator &&
 sudo rabbitmqctl set_permissions -p augur_vhost augur ".*" ".*" ".*"
@@ -116,7 +116,9 @@ sudo systemctl start rabbitmq-server
 
 If your setup of rabbitmq is successful your broker url should look like this:
 
-**broker_url = `amqp://augur:password123@localhost:5672/augur_vhost`**
+**broker_url = `amqp://augur:password_rabbitmq@localhost:5672/augur_vhost`**
+
+This is not the database connection details you will need to enter during `make install`. `make install` will ask you for the PostgreSQL user, password, host, port and database before asking for this connection string.
 
 ### RabbitMQ Developer Note:
 These are the queues we create: 
@@ -155,7 +157,7 @@ Where AugurB is the vhost. The management API at port 15672 will only exist if y
 ## Proxying Augur through Nginx
 Assumes nginx is installed. 
 
-Then you create a file for the server you want Augur to run under in the location of your `sites-enabled` directory for nginx. In this example, Augur is running on port 5038: (the long timeouts on the settings page is for when a user adds a large number of repos or orgs in a single session to prevent timeouts from nginx)
+Then you create a file `augur` for the server you want Augur to run under in the location of your `sites-enabled` directory for nginx. In this example, Augur is running on port 5038: (the long timeouts on the settings page is for when a user adds a large number of repos or orgs in a single session to prevent timeouts from nginx)
 
 ```
 server {
@@ -197,6 +199,8 @@ Generate a certificate for the specific domain for which you have a file already
 ```
  sudo certbot -v --nginx  -d ai.chaoss.io
 ```
+
+If you run on EC2 (or Azure most likely too), you will need to use a service like [DuckDNS](duckdns.org) to create a static hostname, as certbot doesn't allow creating certificates for dynamically assigned hostnames, e.g. ec2-54-154-97-257.eu-west-1.compute.amazonaws.com
 
 In the example file above. Your resulting nginx sites-enabled file will look like this: 
 
@@ -254,7 +258,7 @@ From the root of the Augur Directory, type `make install`. You will be prompted 
 
 - "User" is the PSQL database user, which is `augur` if you followed instructions exactly
 - "Password" is the above user's password
-- "Host" is the domain used with nginx, e.g. `ai.chaoss.io`
+- "Host" is the domain used with nginx, e.g. `ai.chaoss.io`. `localhost` if your PostgreSQL database runs on the same machine.
 - "Port" is 5432 unless you reconfigured something
 - "Database" is the name of the Augur database, which is `augur` if you followed instructions exactly
 - The GitHub token created earlier
